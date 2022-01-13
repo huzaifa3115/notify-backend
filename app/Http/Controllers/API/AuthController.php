@@ -3,46 +3,41 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\User;
+use App\Http\Requests\RegisterRequest;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Validator;
-use App\Http\Requests\LoginRequest;
-
 
 class AuthController extends Controller
 {
-    public function register(LoginRequest $request)
+    public function register(RegisterRequest $request)
     {
-        return "Success";
-        // $validation = Validator::make($request->all(), [
-        //     'username' => 'required|unique:users, username',
-        //     'email' => 'email|required|unique:users',
-        //     'password' => 'required',
-        // ]);
 
-        // $validatedData['password'] = bcrypt($request->password);
-        // dd($request->all());
-        // $user = User::create($validatedData);
+        $userData = $request->all();
+        $userData['password'] = bcrypt($request->password);
 
-        // $accessToken = $user->createToken('authToken')->accessToken;
+        $user = User::create($userData);
 
-        // return response(['user' => $user, 'access_token' => $accessToken]);
+        $accessToken = $user->createToken('authToken')->accessToken;
+        return response()->json([
+            'success' => true,
+            'message' => 'User has been created',
+            'data' => ['user' => $user, 'access_token' => $accessToken],
+        ]);
     }
 
     public function login(Request $request)
     {
-        $loginData = $request->validate([
-            'email' => 'email|required',
-            'password' => 'required',
-        ]);
+        $loginData = $request->all();
 
         if (!auth()->attempt($loginData)) {
-            return response(['message' => 'Invalid Credentials']);
+            return response()->json(['success' => false, 'message' => 'Invalid Credentials']);
         }
 
         $accessToken = auth()->user()->createToken('authToken')->accessToken;
-
-        return response(['user' => auth()->user(), 'access_token' => $accessToken]);
+        return response()->json([
+            'success' => true,
+            'data' => ['user' => auth()->user(), 'access_token' => $accessToken],
+        ]);
 
     }
 }
